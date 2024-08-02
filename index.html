@@ -1,4 +1,5 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -170,6 +171,7 @@
             </div>
             <div id="file-name"></div>
             <div id="ascii-container"></div>
+            <button class="button" id="repeat-button">Repeat</button>
             <div class="download-options">
                 <div class="dropdown">
                     <button class="button">Download</button>
@@ -194,6 +196,7 @@
             const downloadJsonBtn = document.getElementById("download-json");
             const downloadTxtBtn = document.getElementById("download-txt");
             const downloadMp4Btn = document.getElementById("download-mp4");
+            const repeatButton = document.getElementById("repeat-button");
             let videoElement;
             let asciiFrames = [];
 
@@ -201,6 +204,7 @@
             downloadJsonBtn.addEventListener("click", downloadJSON);
             downloadTxtBtn.addEventListener("click", downloadTXT);
             downloadMp4Btn.addEventListener("click", downloadMP4);
+            repeatButton.addEventListener("click", repeatVideo);
 
             function handleFileSelect(event) {
                 const file = event.target.files[0];
@@ -226,7 +230,7 @@
                 videoElement.onloadedmetadata = () => {
                     const canvas = document.createElement("canvas");
                     const ctx = canvas.getContext("2d");
-                    canvas.width = 100;
+                    videoElement.videoWidth
                     canvas.height = Math.floor(100 * (videoElement.videoHeight / videoElement.videoWidth));
 
                     videoElement.muted = true; //added because audio is added using audioPlayer, and bcs of video element having audio it had multiple audios playing
@@ -269,6 +273,15 @@
                     asciiFrame += "\n";
                 }
                 return asciiFrame;
+            }
+
+            function repeatVideo() {
+                if (videoElement) {
+                    videoElement.currentTime = 0;
+                    videoElement.play();
+                    audioPlayer.currentTime = 0;
+                    audioPlayer.play();
+                }
             }
 
             function downloadJSON() {
