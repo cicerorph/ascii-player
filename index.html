@@ -228,35 +228,48 @@
                 document.body.appendChild(videoElement);
 
                 videoElement.onloadedmetadata = () => {
-                    const canvas = document.createElement("canvas");
-                    const ctx = canvas.getContext("2d");
-                    canvas.width = videoElement.videoWidth;
-                    canvas.height = Math.floor(100 * (videoElement.videoHeight / videoElement.videoWidth));
+    const maxDimension = 100; // Maximum dimension (height or width) for scaling
+    const videoWidth = videoElement.videoWidth;
+    const videoHeight = videoElement.videoHeight;
+    let scaledWidth, scaledHeight;
 
-                    videoElement.muted = true; //added because audio is added using audioPlayer, and bcs of video element having audio it had multiple audios playing
+    if (videoWidth > videoHeight) {
+        scaledWidth = maxDimension;
+        scaledHeight = Math.floor(maxDimension * (videoHeight / videoWidth));
+    } else {
+        scaledHeight = maxDimension;
+        scaledWidth = Math.floor(maxDimension * (videoWidth / videoHeight));
+    }
 
-                    videoElement.play();
-                    audioPlayer.play();
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = scaledWidth;
+    canvas.height = scaledHeight;
 
-                    asciiFrames = [];
+    videoElement.muted = true; // Added because audio is added using audioPlayer, and because of video element having audio it had multiple audios playing
 
-                    function renderFrame() {
-                        if (videoElement.paused || videoElement.ended) {
-                            return;
-                        }
+    videoElement.play();
+    audioPlayer.play();
 
-                        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                        const asciiFrame = convertToAscii(imageData);
-                        container.textContent = asciiFrame;
-                        asciiFrames.push(asciiFrame);
+    asciiFrames = [];
 
-                        requestAnimationFrame(renderFrame);
-                    }
+    function renderFrame() {
+        if (videoElement.paused || videoElement.ended) {
+            return;
+        }
 
-                    renderFrame();
-                };
-            }
+        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const asciiFrame = convertToAscii(imageData);
+        container.textContent = asciiFrame;
+        asciiFrames.push(asciiFrame);
+
+        requestAnimationFrame(renderFrame);
+    }
+
+    renderFrame();
+};
+
 
             function convertToAscii(imageData) {
                 let asciiFrame = "";
