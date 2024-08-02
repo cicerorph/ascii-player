@@ -200,22 +200,12 @@
             let videoElement;
             let asciiFrames = [];
 
-repeatButton.addEventListener("click", repeatVideo);
-
-function repeatVideo() {
-    if (videoElement) {
-        videoElement.currentTime = 0;
-        videoElement.play();
-        audioPlayer.currentTime = 0;
-        audioPlayer.play();
-    }
-}
+            repeatButton.addEventListener("click", repeatVideo);
 
             fileInput.addEventListener("change", handleFileSelect);
             downloadJsonBtn.addEventListener("click", downloadJSON);
             downloadTxtBtn.addEventListener("click", downloadTXT);
             downloadMp4Btn.addEventListener("click", downloadMP4);
-            repeatButton.addEventListener("click", repeatVideo);
 
             function handleFileSelect(event) {
                 const file = event.target.files[0];
@@ -239,48 +229,48 @@ function repeatVideo() {
                 document.body.appendChild(videoElement);
 
                 videoElement.onloadedmetadata = () => {
-    const maxDimension = 100; // Maximum dimension (height or width) for scaling
-    const videoWidth = videoElement.videoWidth;
-    const videoHeight = videoElement.videoHeight;
-    let scaledWidth, scaledHeight;
+                    const maxDimension = 100; // Maximum dimension (height or width) for scaling
+                    const videoWidth = videoElement.videoWidth;
+                    const videoHeight = videoElement.videoHeight;
+                    let scaledWidth, scaledHeight;
 
-    if (videoWidth > videoHeight) {
-        scaledWidth = maxDimension;
-        scaledHeight = Math.floor(maxDimension * (videoHeight / videoWidth));
-    } else {
-        scaledHeight = maxDimension;
-        scaledWidth = Math.floor(maxDimension * (videoWidth / videoHeight));
-    }
+                    if (videoWidth > videoHeight) {
+                        scaledWidth = maxDimension;
+                        scaledHeight = Math.floor(maxDimension * (videoHeight / videoWidth));
+                    } else {
+                        scaledHeight = maxDimension;
+                        scaledWidth = Math.floor(maxDimension * (videoWidth / videoHeight));
+                    }
 
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    canvas.width = scaledWidth;
-    canvas.height = scaledHeight;
+                    const canvas = document.createElement("canvas");
+                    const ctx = canvas.getContext("2d");
+                    canvas.width = scaledWidth;
+                    canvas.height = scaledHeight;
 
-    videoElement.muted = true; // Added because audio is added using audioPlayer, and because of video element having audio it had multiple audios playing
+                    videoElement.muted = true; // Added because audio is added using audioPlayer, and because of video element having audio it had multiple audios playing
 
-    videoElement.play();
-    audioPlayer.play();
+                    videoElement.play();
+                    audioPlayer.play();
 
-    asciiFrames = [];
+                    asciiFrames = [];
 
-    function renderFrame() {
-        if (videoElement.paused || videoElement.ended) {
-            return;
-        }
+                    function renderFrame() {
+                        if (videoElement.paused || videoElement.ended) {
+                            return;
+                        }
 
-        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const asciiFrame = convertToAscii(imageData);
-        container.textContent = asciiFrame;
-        asciiFrames.push(asciiFrame);
+                        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const asciiFrame = convertToAscii(imageData);
+                        container.textContent = asciiFrame;
+                        asciiFrames.push(asciiFrame);
 
-        requestAnimationFrame(renderFrame);
-    }
+                        requestAnimationFrame(renderFrame);
+                    }
 
-    renderFrame();
-};
-
+                    renderFrame();
+                };
+            }
 
             function convertToAscii(imageData) {
                 let asciiFrame = "";
@@ -300,104 +290,40 @@ function repeatVideo() {
             }
 
             function repeatVideo() {
-                if (videoElement) {
+                if (videoElement && audioPlayer) {
                     videoElement.currentTime = 0;
-                    videoElement.play();
                     audioPlayer.currentTime = 0;
+                    videoElement.play();
                     audioPlayer.play();
                 }
             }
 
             function downloadJSON() {
-                const jsonContent = JSON.stringify(asciiFrames);
-                const blob = new Blob([jsonContent], { type: "application/json" });
+                const json = JSON.stringify(asciiFrames);
+                const blob = new Blob([json], { type: "application/json" });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement("a");
                 a.href = url;
-                a.download = "ascii_frames.json";
+                a.download = "ascii_video.json";
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
-                URL.revokeObjectURL(url);
             }
 
             function downloadTXT() {
-                const txtContent = asciiFrames.join("\n\n--- Next Frame ---\n\n");
-                const blob = new Blob([txtContent], { type: "text/plain" });
+                const text = asciiFrames.join("\n");
+                const blob = new Blob([text], { type: "text/plain" });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement("a");
                 a.href = url;
-                a.download = "ascii_frames.txt";
+                a.download = "ascii_video.txt";
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
-                URL.revokeObjectURL(url);
             }
 
             function downloadMP4() {
-                const canvas = document.createElement("canvas");
-                const ctx = canvas.getContext("2d");
-                canvas.width = 800;
-                canvas.height = 600;
-
-                const stream = canvas.captureStream(30);
-                const recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
-
-                const chunks = [];
-                recorder.ondataavailable = (e) => chunks.push(e.data);
-                recorder.onstop = async () => {
-                    const blob = new Blob(chunks, { type: "video/webm" });
-                    const arrayBuffer = await blob.arrayBuffer();
-                    const worker = new Worker("https://ascii.idkman.lol/ffmpeg-worker-mp4.js");
-                    worker.onmessage = function (e) {
-                        const msg = e.data;
-                        switch (msg.type) {
-                            case "ready":
-                                worker.postMessage({
-                                    type: "run",
-                                    arguments: ["-i", "input.webm", "output.mp4"],
-                                    MEMFS: [{ name: "input.webm", data: arrayBuffer }],
-                                });
-                                break;
-                            case "done":
-                                const mp4 = msg.data.MEMFS[0];
-                                const url = URL.createObjectURL(new Blob([mp4.data], { type: "video/mp4" }));
-                                const a = document.createElement("a");
-                                a.href = url;
-                                a.download = "ascii_video.mp4";
-                                document.body.appendChild(a);
-                                a.click();
-                                document.body.removeChild(a);
-                                URL.revokeObjectURL(url);
-                                break;
-                        }
-                    };
-                };
-
-                recorder.start();
-
-                let frameIndex = 0;
-                function drawNextFrame() {
-                    if (frameIndex >= asciiFrames.length) {
-                        recorder.stop();
-                        return;
-                    }
-
-                    ctx.fillStyle = "white";
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    ctx.fillStyle = "black";
-                    ctx.font = "10px monospace";
-
-                    const lines = asciiFrames[frameIndex].split("\n");
-                    lines.forEach((line, index) => {
-                        ctx.fillText(line, 10, 20 + index * 12);
-                    });
-
-                    frameIndex++;
-                    requestAnimationFrame(drawNextFrame);
-                }
-
-                drawNextFrame();
+                alert("MP4 download is currently disabled.");
             }
         </script>
     </body>
