@@ -200,6 +200,17 @@
             let videoElement;
             let asciiFrames = [];
 
+repeatButton.addEventListener("click", repeatVideo);
+
+function repeatVideo() {
+    if (videoElement) {
+        videoElement.currentTime = 0;
+        videoElement.play();
+        audioPlayer.currentTime = 0;
+        audioPlayer.play();
+    }
+}
+
             fileInput.addEventListener("change", handleFileSelect);
             downloadJsonBtn.addEventListener("click", downloadJSON);
             downloadTxtBtn.addEventListener("click", downloadTXT);
